@@ -1,0 +1,21 @@
+risk:
+  zscore_windows: [20, 60, 120]
+  volatility_windows: [20, 60, 120]
+  mdd_windows: [60, 120, 250]
+  percentile_windows: [20, 60, 120, 250]
+  var_horizons: [1, 5]
+  var_confidence_levels: [0.95, 0.99]
+
+alerts:
+  green:
+    description: 正常
+  yellow:
+    rules:
+      percentile_20_gt: 95
+      zscore_20_gt: 2
+  orange:
+    rules:
+      percentile_60_gt: 95
+  red:
+    rules:
+      percentile_250_gt: 95

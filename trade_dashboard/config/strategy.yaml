@@ -1,0 +1,18 @@
+strategies:
+  - name: PP_PG价比
+    formula: PP / PG
+    enabled: true
+    category: 烯烃
+    notes: 基础价比
+
+  - name: PP_PG手数组合
+    formula: 17 * PP - 5 * PG
+    enabled: true
+    category: 套利
+    notes: 手数组合
+
+  - name: 丙烯丙烷利润
+    formula: Propylene - 1.22 * Propane - 800
+    enabled: true
+    category: 利润
+    notes: 动态利润公式

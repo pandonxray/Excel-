@@ -1,0 +1,17 @@
+excel:
+  workbook_path: data/raw/wind_data.xlsx
+  data_sheet: 数据
+  strategy_sheet: 策略
+  date_column: Date
+  refresh_timeout_sec: 180
+
+analysis:
+  default_window: 120
+  rolling_windows: [20, 60, 120, 250]
+  var_confidence: 0.95
+  seasonal_years: 5
+  remove_feb29: true
+
+logging:
+  level: INFO
+  file: outputs/app.log
