@@ -67,6 +67,32 @@ trade_dashboard/
 - `seasonal_engine.py`：季节矩阵、季节均值带、月度分布、同期分位与偏离、去除2月29日。
 - `dashboard.py`：中文页面（总览、组合分析、季节分析、数据浏览）。
 
+
+## 环境一键配置（推荐）
+
+### Linux / macOS
+```bash
+cd trade_dashboard
+bash scripts/setup_env.sh
+```
+
+### Windows PowerShell
+```powershell
+cd trade_dashboard
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_env.ps1
+```
+
+脚本会自动：
+- 创建虚拟环境 `.venv`
+- 升级 pip
+- 检测缺失依赖
+- 按多个镜像顺序安装依赖（PyPI / 清华 / 阿里云）
+
+若公司网络需要代理，可先配置：
+```bash
+python -m pip config set global.proxy http://<user>:<pass>@<proxy_host>:<port>
+```
+
 ## 快速开始
 
 ```bash
