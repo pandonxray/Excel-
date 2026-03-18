@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -34,7 +35,10 @@ except ImportError:
     from src.utils import load_yaml, setup_logging
 
 
-BASE_DIR = Path(__file__).resolve().parents[1]
+if getattr(sys, "frozen", False):
+    BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
+else:
+    BASE_DIR = Path(__file__).resolve().parents[1]
 APP_CONFIG = load_yaml(BASE_DIR / "config" / "app.yaml")
 METRIC_CONFIG = load_yaml(BASE_DIR / "config" / "metric.yaml")
 setup_logging(APP_CONFIG.get("logging", {}).get("level", "INFO"), APP_CONFIG.get("logging", {}).get("file"))

@@ -6,3 +6,6 @@ trade_dashboard/streamlit.out.log
 trade_dashboard/streamlit.err.log
 trade_dashboard/**/__pycache__/
 trade_dashboard/**/*.pyc
+trade_dashboard/build/
+trade_dashboard/dist/
+trade_dashboard/*.spec
