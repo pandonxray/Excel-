@@ -1,0 +1,19 @@
+excel:
+  workbook_path: D:/坚果云/油气-djx-zr/windcalculate.xlsx
+  data_sheet: wind_raw_data
+  strategy_sheet:
+  date_column: Wind
+  header_rows: [0, 1]
+  column_name_row: 0
+  refresh_timeout_sec: 180
+
+analysis:
+  default_window: 120
+  rolling_windows: [20, 60, 120, 250]
+  var_confidence: 0.95
+  seasonal_years: 5
+  remove_feb29: true
+
+logging:
+  level: INFO
+  file: outputs/app.log

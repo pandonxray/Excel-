@@ -1,0 +1,24 @@
+strategies:
+  - name: PP01_LPG01_ratio
+    formula: PP01 / LPG01
+    enabled: true
+    category: ratio
+    notes: PP and LPG front-month ratio
+
+  - name: PP05_MA05_spread
+    formula: PP05 - MA05
+    enabled: true
+    category: spread
+    notes: PP May minus MA May
+
+  - name: L01_PP01_spread
+    formula: L01 - PP01
+    enabled: true
+    category: cross_asset
+    notes: LLDPE front-month minus PP front-month
+
+  - name: PP09_L09_ratio
+    formula: PP09 / L09
+    enabled: true
+    category: ratio
+    notes: PP Sep divided by L Sep

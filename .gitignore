@@ -1,0 +1,6 @@
+repo_inspect/
+trade_dashboard/.pytest_cache/
+trade_dashboard/outputs/
+trade_dashboard/*.log
+trade_dashboard/streamlit.out.log
+trade_dashboard/streamlit.err.log
