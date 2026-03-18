@@ -24,3 +24,26 @@ def test_load_timeseries_from_excel_supports_multi_header_and_excel_serial_dates
     assert list(df.columns) == ["PP01", "LPG01"]
     assert df.index.tolist() == [pd.Timestamp("2026-03-16"), pd.Timestamp("2026-03-17")]
     assert df.loc[pd.Timestamp("2026-03-17"), "PP01"] == 7771
+
+
+def test_load_timeseries_from_excel_ignores_na_and_blank_values(tmp_path):
+    workbook = tmp_path / "wind_like_missing.xlsx"
+    rows = [
+        ["Wind", "PP01", "LPG01", "EMPTY"],
+        ["指标名称", "聚丙烯", "LPG", "空列"],
+        [46098, "7771", "NA", ""],
+        [46097, " ", "4380", "N/A"],
+    ]
+    pd.DataFrame(rows).to_excel(workbook, sheet_name="wind_raw_data", header=False, index=False)
+
+    df = load_timeseries_from_excel(
+        workbook,
+        "wind_raw_data",
+        date_column="Wind",
+        header_rows=[0, 1],
+        column_name_row=0,
+    )
+
+    assert list(df.columns) == ["PP01", "LPG01"]
+    assert pd.isna(df.loc[pd.Timestamp("2026-03-17"), "LPG01"])
+    assert pd.isna(df.loc[pd.Timestamp("2026-03-16"), "PP01"])

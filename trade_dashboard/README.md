@@ -147,15 +147,14 @@ python -m pip install pywin32
 
 如果没有这些环境，按钮会提示跳过，但不影响直接读取现有 Excel 文件。
 
-## Excel 路径切换
+## Excel 文件选择
 
-看板左侧有 `Excel 路径` 输入框。
+看板左侧支持两种方式：
 
-你可以：
+- `本地路径`：直接输入或粘贴 Excel 绝对路径
+- `拖拽/上传 Excel`：把 Excel 文件拖进侧边栏，或者点击后从本地文件夹选择文件
 
-- 使用默认路径
-- 粘贴新的 Excel 绝对路径
-- 重新载入分析其他文件
+这意味着你现在既可以手工填路径，也可以直接像普通桌面工具一样选文件。
 
 ## 运行测试
 
@@ -186,7 +185,25 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build_exe.ps1
 
 - `dist\WindDashboard\WindDashboard.exe`
 
-这是一个 Windows 启动器，可直接双击运行看板。
+注意：
+
+- 真正可迁移的是整个 `dist\WindDashboard` 文件夹，不是只拷贝单独一个 `WindDashboard.exe`
+- 这个文件夹里还包含 `_internal` 运行时依赖，缺了它 exe 无法正常工作
+- 复制到其他 Windows 电脑时，建议整文件夹一起拷贝
+- 目标电脑不需要单独安装 Python
+
+推荐做法：
+
+1. 在你的开发电脑执行打包
+2. 把整个 `dist\WindDashboard` 文件夹复制到目标电脑
+3. 在目标电脑双击 `WindDashboard.exe`
+4. 第一次打开后，在看板左侧选择或拖入目标 Excel 文件
+
+如果你希望跨电脑使用更稳，建议：
+
+- 尽量在和目标电脑相同架构的 Windows 环境下打包
+- 打包机和目标机都使用 64 位 Windows
+- 如果目标电脑没有桌面版 Excel，就不要依赖“刷新 Excel 数据”按钮，直接读取现成文件即可
 
 ## 当前默认预设组合
 

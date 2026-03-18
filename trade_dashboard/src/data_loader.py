@@ -7,6 +7,7 @@ from typing import Iterable
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+MISSING_MARKERS = {"", "NA", "N/A", "NULL", "NONE", "NAN", "#N/A"}
 
 
 def _flatten_columns(columns: pd.Index, column_name_row: int) -> list[str]:
@@ -24,6 +25,9 @@ def _flatten_columns(columns: pd.Index, column_name_row: int) -> list[str]:
 
 
 def _coerce_excel_dates(values: pd.Series) -> pd.Series:
+    cleaned = values.astype("object").where(~values.isna(), None)
+    cleaned = cleaned.map(lambda x: None if isinstance(x, str) and x.strip().upper() in MISSING_MARKERS else x)
+    values = pd.Series(cleaned, index=values.index)
     numeric = pd.to_numeric(values, errors="coerce")
     parsed = pd.to_datetime(values, errors="coerce")
     excel_serials = numeric.notna() & numeric.between(20000, 60000)
@@ -50,6 +54,9 @@ def load_timeseries_from_excel(
         logger.exception("Failed to read Excel data: %s", exc)
         raise
 
+    df = df.replace(r"^\s*$", pd.NA, regex=True)
+    df = df.replace(list(MISSING_MARKERS), pd.NA)
+
     df.columns = _flatten_columns(df.columns, column_name_row)
     df = df.loc[:, [bool(str(col).strip()) for col in df.columns]]
 
@@ -63,6 +70,8 @@ def load_timeseries_from_excel(
     numeric_cols = [c for c in df.columns if c]
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    df = df.dropna(axis=1, how="all")
 
     logger.info("Loaded timeseries data with %s rows and %s columns", len(df), len(df.columns))
     return df

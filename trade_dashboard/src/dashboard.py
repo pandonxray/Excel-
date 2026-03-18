@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 import pandas as pd
@@ -39,10 +40,18 @@ if getattr(sys, "frozen", False):
     BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
 else:
     BASE_DIR = Path(__file__).resolve().parents[1]
+
 APP_CONFIG = load_yaml(BASE_DIR / "config" / "app.yaml")
 METRIC_CONFIG = load_yaml(BASE_DIR / "config" / "metric.yaml")
 setup_logging(APP_CONFIG.get("logging", {}).get("level", "INFO"), APP_CONFIG.get("logging", {}).get("file"))
 logger = logging.getLogger(__name__)
+
+
+def _save_uploaded_excel(uploaded_file) -> str:
+    suffix = Path(uploaded_file.name).suffix or ".xlsx"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(uploaded_file.getbuffer())
+        return tmp.name
 
 
 @st.cache_data(show_spinner=False)
@@ -93,8 +102,8 @@ def _series_groups(columns: list[str]) -> dict[str, list[str]]:
 def _grouped_selectbox(label_prefix: str, columns: list[str], key_prefix: str, exclude: str | None = None) -> str:
     groups = _series_groups(columns)
     group_names = list(groups.keys())
-
     default_group = group_names[0]
+
     if exclude:
         for group_name, members in groups.items():
             if any(item != exclude for item in members):
@@ -134,12 +143,7 @@ def _build_ratio_series(
 
 
 def _render_metric_table(title: str, data: dict[str, float], style: str = "number") -> None:
-    frame = pd.DataFrame(
-        {
-            "指标": list(data.keys()),
-            "数值": [_format_metric(value, style=style) for value in data.values()],
-        }
-    )
+    frame = pd.DataFrame({"指标": list(data.keys()), "数值": [_format_metric(value, style=style) for value in data.values()]})
     st.subheader(title)
     st.dataframe(frame, use_container_width=True, hide_index=True)
 
@@ -285,13 +289,31 @@ def _select_analysis_series(raw_data: pd.DataFrame, portfolios: pd.DataFrame) ->
 
 def _sidebar_excel_path() -> str:
     default_path = APP_CONFIG["excel"]["workbook_path"]
-    if "excel_path" not in st.session_state:
-        st.session_state["excel_path"] = default_path
-
     st.sidebar.markdown("### Excel 数据源")
-    excel_path = st.sidebar.text_input("Excel 路径", value=st.session_state["excel_path"])
-    st.session_state["excel_path"] = excel_path.strip() or default_path
-    return st.session_state["excel_path"]
+    source_mode = st.sidebar.radio("选择方式", ["本地路径", "拖拽/上传 Excel"], key="excel_source_mode")
+
+    if source_mode == "本地路径":
+        if "excel_path" not in st.session_state:
+            st.session_state["excel_path"] = default_path
+        excel_path = st.sidebar.text_input("Excel 路径", value=st.session_state["excel_path"])
+        st.session_state["excel_path"] = excel_path.strip() or default_path
+        return st.session_state["excel_path"]
+
+    uploaded_file = st.sidebar.file_uploader(
+        "拖拽或选择 Excel 文件",
+        type=["xlsx", "xlsm", "xls"],
+        key="excel_uploader",
+        help="支持直接拖拽 Excel 到这里，或点击后从本地文件夹选择。",
+    )
+    if uploaded_file is None:
+        return default_path
+
+    upload_key = f"{uploaded_file.name}_{uploaded_file.size}"
+    if st.session_state.get("uploaded_excel_key") != upload_key:
+        st.session_state["uploaded_excel_key"] = upload_key
+        st.session_state["uploaded_excel_path"] = _save_uploaded_excel(uploaded_file)
+        load_all_data.clear()
+    return st.session_state["uploaded_excel_path"]
 
 
 def main() -> None:
