@@ -4,3 +4,5 @@ trade_dashboard/outputs/
 trade_dashboard/*.log
 trade_dashboard/streamlit.out.log
 trade_dashboard/streamlit.err.log
+trade_dashboard/**/__pycache__/
+trade_dashboard/**/*.pyc
