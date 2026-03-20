@@ -31,7 +31,8 @@ def seasonal_matrix(series: pd.Series, years: int = 5, interpolate: bool = True)
     matrix = matrix.reindex(_continuous_seasonal_index())
 
     if interpolate:
-        matrix = matrix.interpolate(method="linear", limit_direction="both")
+        # Only fill gaps between known observations; keep future tail gaps empty.
+        matrix = matrix.interpolate(method="linear", limit_area="inside")
 
     return matrix
 

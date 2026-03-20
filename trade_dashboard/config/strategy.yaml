@@ -1,24 +1,72 @@
 strategies:
-  - name: PP01_LPG01_ratio
-    formula: PP01 / LPG01
+  - name: PP01_L01_spread
+    formula: PP01 - L01
     enabled: true
-    category: ratio
-    notes: PP and LPG front-month ratio
+    category: PP-L
+    notes: PP01 minus L01
 
-  - name: PP05_MA05_spread
-    formula: PP05 - MA05
+  - name: PP05_L05_spread
+    formula: PP05 - L05
     enabled: true
-    category: spread
-    notes: PP May minus MA May
+    category: PP-L
+    notes: PP05 minus L05
 
-  - name: L01_PP01_spread
-    formula: L01 - PP01
+  - name: PP09_L09_spread
+    formula: PP09 - L09
     enabled: true
-    category: cross_asset
-    notes: LLDPE front-month minus PP front-month
+    category: PP-L
+    notes: PP09 minus L09
 
-  - name: PP09_L09_ratio
-    formula: PP09 / L09
+  - name: Domestic_PDH_01
+    formula: PP01 - 1.18 * LPG01
     enabled: true
-    category: ratio
-    notes: PP Sep divided by L Sep
+    category: Domestic_PDH
+    notes: Uses LPG01 as the propane leg
+
+  - name: Domestic_PDH_05
+    formula: PP05 - 1.18 * LPG05
+    enabled: true
+    category: Domestic_PDH
+    notes: Uses LPG05 as the propane leg
+
+  - name: Domestic_PDH_09
+    formula: PP09 - 1.18 * LPG09
+    enabled: true
+    category: Domestic_PDH
+    notes: Uses LPG09 as the propane leg
+
+  - name: FEI_PDH_01
+    formula: (DATE_INT < 20250401) * (PP01 - FEI01 * USDCHY * 1.01 * 1.09 * 1.17) + (DATE_INT >= 20250401) * (PP01 - FEI01 * USDCHY * 1.11 * 1.09 * 1.17)
+    enabled: true
+    category: FEI_PDH
+    notes: FEI 01 with different tariff coefficients before and after 2025-04-01
+
+  - name: FEI_PDH_05
+    formula: (DATE_INT < 20250401) * (PP05 - FEI05 * USDCHY * 1.01 * 1.09 * 1.17) + (DATE_INT >= 20250401) * (PP05 - FEI05 * USDCHY * 1.11 * 1.09 * 1.17)
+    enabled: true
+    category: FEI_PDH
+    notes: FEI 05 with different tariff coefficients before and after 2025-04-01
+
+  - name: FEI_PDH_09
+    formula: (DATE_INT < 20250401) * (PP09 - FEI09 * USDCHY * 1.01 * 1.09 * 1.17) + (DATE_INT >= 20250401) * (PP09 - FEI09 * USDCHY * 1.11 * 1.09 * 1.17)
+    enabled: true
+    category: FEI_PDH
+    notes: FEI 09 with different tariff coefficients before and after 2025-04-01
+
+  - name: MTO_01
+    formula: PP01 - 3 * MA01
+    enabled: true
+    category: MTO
+    notes: PP01 minus 3 times MA01
+
+  - name: MTO_05
+    formula: PP05 - 3 * MA05
+    enabled: true
+    category: MTO
+    notes: PP05 minus 3 times MA05
+
+  - name: MTO_09
+    formula: PP09 - 3 * MA09
+    enabled: true
+    category: MTO
+    notes: PP09 minus 3 times MA09

@@ -16,3 +16,10 @@ def test_seasonal_matrix_is_continuous_after_reindex():
     matrix = seasonal_matrix(series, years=2, interpolate=True)
     assert "01-02" in matrix.index
     assert matrix.loc["01-02"].notna().all()
+
+
+def test_seasonal_matrix_does_not_fill_future_tail():
+    idx = pd.to_datetime(["2026-01-01", "2026-01-02"])
+    series = pd.Series([10.0, 11.0], index=idx)
+    matrix = seasonal_matrix(series, years=1, interpolate=True)
+    assert pd.isna(matrix.loc["01-05", 2026])

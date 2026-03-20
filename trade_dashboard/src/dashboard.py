@@ -11,7 +11,7 @@ import plotly.express as px
 import streamlit as st
 
 try:
-    from .data_loader import load_strategy_table, load_timeseries_from_excel
+    from .data_loader import load_timeseries_from_excel
     from .excel_refresh import refresh_excel_workbook
     from .portfolio_engine import build_portfolios
     from .risk_engine import (
@@ -23,7 +23,7 @@ try:
     from .seasonal_engine import remove_feb29, seasonal_matrix, seasonal_stats
     from .utils import load_yaml, setup_logging
 except ImportError:
-    from src.data_loader import load_strategy_table, load_timeseries_from_excel
+    from src.data_loader import load_timeseries_from_excel
     from src.excel_refresh import refresh_excel_workbook
     from src.portfolio_engine import build_portfolios
     from src.risk_engine import (
@@ -46,6 +46,8 @@ METRIC_CONFIG = load_yaml(BASE_DIR / "config" / "metric.yaml")
 setup_logging(APP_CONFIG.get("logging", {}).get("level", "INFO"), APP_CONFIG.get("logging", {}).get("file"))
 logger = logging.getLogger(__name__)
 
+SOURCE_LABELS = {"wind": "Wind", "manual": "Manual"}
+
 
 def _save_uploaded_excel(uploaded_file) -> str:
     suffix = Path(uploaded_file.name).suffix or ".xlsx"
@@ -55,27 +57,35 @@ def _save_uploaded_excel(uploaded_file) -> str:
 
 
 @st.cache_data(show_spinner=False)
-def load_all_data(workbook_path: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_all_data(workbook_path: str) -> tuple[dict[str, pd.DataFrame], pd.DataFrame, pd.DataFrame]:
     excel_cfg = APP_CONFIG["excel"]
     workbook = Path(workbook_path)
-    data = load_timeseries_from_excel(
+
+    wind_df = load_timeseries_from_excel(
         workbook,
         excel_cfg["data_sheet"],
         excel_cfg["date_column"],
         excel_cfg.get("header_rows", 0),
         excel_cfg.get("column_name_row", 0),
     )
+    manual_df = load_timeseries_from_excel(
+        workbook,
+        excel_cfg.get("manual_sheet", "manual_data"),
+        excel_cfg.get("manual_date_column", "price_date"),
+        excel_cfg.get("manual_header_rows", 0),
+        excel_cfg.get("manual_column_name_row", 0),
+    )
 
-    strategy_sheet = excel_cfg.get("strategy_sheet")
-    if strategy_sheet:
-        strategy_df = load_strategy_table(workbook, strategy_sheet)
-    else:
-        strategy_cfg = load_yaml(BASE_DIR / "config" / "strategy.yaml")
-        strategy_df = pd.DataFrame(strategy_cfg.get("strategies", []))
-        strategy_df = strategy_df.rename(columns={"name": "StrategyName", "formula": "Formula", "enabled": "Enabled"})
+    merged_for_formula = wind_df.join(manual_df, how="outer").sort_index()
 
-    portfolios = build_portfolios(data, strategy_df) if not strategy_df.empty else pd.DataFrame(index=data.index)
-    return data, portfolios
+    strategy_cfg = load_yaml(BASE_DIR / "config" / "strategy.yaml")
+    strategy_df = pd.DataFrame(strategy_cfg.get("strategies", []))
+    strategy_df = strategy_df.rename(
+        columns={"name": "StrategyName", "formula": "Formula", "enabled": "Enabled", "category": "Category", "notes": "Notes"}
+    )
+    portfolios = build_portfolios(merged_for_formula, strategy_df) if not strategy_df.empty else pd.DataFrame(index=merged_for_formula.index)
+
+    return {"wind": wind_df, "manual": manual_df}, portfolios, strategy_df
 
 
 def _format_metric(value: float | str, style: str = "number") -> str:
@@ -99,47 +109,79 @@ def _series_groups(columns: list[str]) -> dict[str, list[str]]:
     return dict(sorted(groups.items()))
 
 
-def _grouped_selectbox(label_prefix: str, columns: list[str], key_prefix: str, exclude: str | None = None) -> str:
+def _grouped_selectbox(label_prefix: str, columns: list[str], key_prefix: str) -> str:
     groups = _series_groups(columns)
     group_names = list(groups.keys())
-    default_group = group_names[0]
-
-    if exclude:
-        for group_name, members in groups.items():
-            if any(item != exclude for item in members):
-                default_group = group_name
-                break
-
-    group = st.sidebar.selectbox(f"{label_prefix}类别", group_names, key=f"{key_prefix}_group", index=group_names.index(default_group))
-    choices = [item for item in groups[group] if item != exclude]
-    if not choices:
-        choices = columns
-    return st.sidebar.selectbox(f"{label_prefix}合约", choices, key=f"{key_prefix}_item")
+    group = st.sidebar.selectbox(f"{label_prefix}类别", group_names, key=f"{key_prefix}_group")
+    return st.sidebar.selectbox(f"{label_prefix}合约", groups[group], key=f"{key_prefix}_item")
 
 
-def _build_ratio_series(
-    data: pd.DataFrame,
-    left_col: str,
-    right_col: str,
-    left_weight: float,
-    right_weight: float,
-    mode: str,
-) -> tuple[str, pd.Series, str]:
-    left_expr = f"{left_weight:g} * {left_col}" if left_weight != 1 else left_col
-    right_expr = f"{right_weight:g} * {right_col}" if right_weight != 1 else right_col
+def _grouped_strategy_selectbox(strategy_df: pd.DataFrame, key_prefix: str) -> str:
+    grouped: dict[str, list[str]] = {}
+    for _, row in strategy_df.iterrows():
+        category = str(row.get("Category", "Other") or "Other")
+        grouped.setdefault(category, []).append(str(row["StrategyName"]))
 
-    if mode == "价格比":
-        denominator = (data[right_col] * right_weight).replace(0, pd.NA)
-        series = (data[left_col] * left_weight) / denominator
-        formula = f"({left_expr}) / ({right_expr})"
-        suffix = "ratio"
-    else:
-        series = (data[left_col] * left_weight) - (data[right_col] * right_weight)
-        formula = f"({left_expr}) - ({right_expr})"
-        suffix = "spread"
+    category_names = sorted(grouped.keys())
+    category = st.sidebar.selectbox("预设组合分类", category_names, key=f"{key_prefix}_category")
+    return st.sidebar.selectbox("预设组合", grouped[category], key=f"{key_prefix}_name")
 
-    name = f"{left_col}_{right_col}_{suffix}"
-    return name, series.rename(name), formula
+
+def _series_valid_range(series: pd.Series) -> tuple[pd.Timestamp | None, pd.Timestamp | None]:
+    clean = series.dropna()
+    if clean.empty:
+        return None, None
+    return clean.index.min(), clean.index.max()
+
+
+def _build_coverage_table(frame: pd.DataFrame, required_cols: list[str]) -> pd.DataFrame:
+    rows: list[dict[str, object]] = []
+    for col in required_cols:
+        start, end = _series_valid_range(frame[col])
+        rows.append(
+            {
+                "区间": f"{col} 有效区间",
+                "开始": start.date().isoformat() if start is not None else "N/A",
+                "结束": end.date().isoformat() if end is not None else "N/A",
+                "样本数": int(frame[col].notna().sum()),
+            }
+        )
+
+    overlap = frame.dropna(subset=required_cols)
+    overlap_start, overlap_end = _series_valid_range(overlap["target"]) if "target" in overlap.columns else (None, None)
+    rows.append(
+        {
+            "区间": "全部项共同有值区间",
+            "开始": overlap_start.date().isoformat() if overlap_start is not None else "N/A",
+            "结束": overlap_end.date().isoformat() if overlap_end is not None else "N/A",
+            "样本数": int(len(overlap)),
+        }
+    )
+    return pd.DataFrame(rows)
+
+
+def _apply_date_filter(frame: pd.DataFrame, required_cols: list[str], key_prefix: str) -> tuple[pd.DataFrame, str]:
+    clean_index = frame.dropna(how="all").index
+    if clean_index.empty:
+        return frame.iloc[0:0], "空区间"
+
+    mode = st.sidebar.selectbox("分析区间", ["全区间", "共同有值区间", "自定义区间"], key=f"{key_prefix}_range_mode")
+    if mode == "共同有值区间":
+        return frame.dropna(subset=required_cols), mode
+
+    if mode == "自定义区间":
+        start_default, end_default = clean_index.min().date(), clean_index.max().date()
+        start_date, end_date = st.sidebar.date_input(
+            "选择开始/结束日期",
+            value=(start_default, end_default),
+            min_value=start_default,
+            max_value=end_default,
+            key=f"{key_prefix}_date_input",
+        )
+        filtered = frame.loc[(frame.index >= pd.Timestamp(start_date)) & (frame.index <= pd.Timestamp(end_date))]
+        return filtered, mode
+
+    return frame, mode
 
 
 def _render_metric_table(title: str, data: dict[str, float], style: str = "number") -> None:
@@ -151,7 +193,6 @@ def _render_metric_table(title: str, data: dict[str, float], style: str = "numbe
 def _risk_controls(series: pd.Series) -> dict[str, float]:
     st.sidebar.markdown("### 风控参数")
     max_window = max(20, min(len(series.dropna()), 2000))
-
     percentile_window = int(st.sidebar.number_input("百分位窗口", min_value=20, max_value=max_window, value=min(250, max_window), step=10))
     zscore_window = int(st.sidebar.number_input("ZScore窗口", min_value=20, max_value=max_window, value=min(60, max_window), step=10))
     var_lookback = int(st.sidebar.number_input("VaR回看窗口", min_value=20, max_value=max_window, value=min(250, max_window), step=10))
@@ -159,7 +200,6 @@ def _risk_controls(series: pd.Series) -> dict[str, float]:
     var_confidence = float(st.sidebar.slider("VaR置信度", min_value=0.80, max_value=0.995, value=0.95, step=0.005))
     default_value = float(series.dropna().iloc[-1]) if not series.dropna().empty else 0.0
     custom_value = float(st.sidebar.number_input("自定义数值查看分位", value=default_value))
-
     return {
         "percentile_window": percentile_window,
         "zscore_window": zscore_window,
@@ -246,7 +286,10 @@ def _render_seasonality_section(series: pd.Series) -> None:
     mean = matrix.mean(axis=1)
     std = matrix.std(axis=1)
     band = pd.DataFrame({"均值": mean, "+1σ": mean + std, "-1σ": mean - std}, index=continuous_index)
-    st.plotly_chart(px.line(band, title="季节性均值带"), use_container_width=True)
+    if band.dropna(how="all").empty:
+        st.info("当前区间有效季节性样本不足，暂时无法生成季节性均值带。")
+    else:
+        st.plotly_chart(px.line(band.dropna(how="all"), title="季节性均值带"), use_container_width=True)
 
     monthly = seasonal_source.to_frame("value")
     monthly["month"] = monthly.index.month
@@ -258,33 +301,133 @@ def _render_seasonality_section(series: pd.Series) -> None:
     cols[1].metric("当前值同期偏离", _format_metric(s_metrics["seasonal_deviation"]))
 
 
-def _select_analysis_series(raw_data: pd.DataFrame, portfolios: pd.DataFrame) -> tuple[str, pd.Series, str]:
-    mode = st.sidebar.radio("分析对象", ["单品种", "价格比组合", "预设组合"])
-    raw_columns = raw_data.columns.tolist()
+def _build_term_expression(coefficient: float, column: str, multiplier_col: str | None) -> str:
+    coeff_prefix = "" if coefficient == 1 else f"{coefficient:g} * "
+    expr = f"{coeff_prefix}{column}"
+    if multiplier_col:
+        expr = f"{expr} * {multiplier_col}"
+    return expr
 
-    if mode == "单品种":
-        column = _grouped_selectbox("选择", raw_columns, "single")
-        return column, raw_data[column], column
 
-    if mode == "价格比组合":
-        combo_mode = st.sidebar.selectbox("组合方式", ["价格比", "价差"])
-        left_col = _grouped_selectbox("左腿", raw_columns, "left")
-        right_col = _grouped_selectbox("右腿", raw_columns, "right", exclude=left_col)
-        left_weight = st.sidebar.number_input("左腿系数", value=1.0, step=0.1, format="%.2f")
-        right_weight = st.sidebar.number_input("右腿系数", value=1.0, step=0.1, format="%.2f")
-        custom_name = st.sidebar.text_input("组合名称", value="")
-        default_name, series, formula = _build_ratio_series(raw_data, left_col, right_col, left_weight, right_weight, combo_mode)
-        return custom_name.strip() or default_name, series, formula
+def _collect_term_configs(sources: dict[str, pd.DataFrame], mode: str) -> list[dict[str, object]]:
+    term_count = st.sidebar.selectbox("项数", [2, 3], key=f"{mode}_term_count")
+    fx_default = APP_CONFIG["excel"].get("fx_column", "USDCHY")
+    wind_columns = sources["wind"].columns.tolist()
+    terms: list[dict[str, object]] = []
 
-    if portfolios.empty:
-        st.sidebar.warning("当前没有可用的预设组合，已切回单品种模式。")
-        column = _grouped_selectbox("选择", raw_columns, "fallback")
-        return column, raw_data[column], column
+    for idx in range(term_count):
+        st.sidebar.markdown(f"#### 第 {idx + 1} 项")
+        source_key = st.sidebar.selectbox(
+            f"第 {idx + 1} 项数据源",
+            ["wind", "manual"],
+            format_func=lambda x: SOURCE_LABELS[x],
+            key=f"{mode}_term_{idx}_source",
+        )
+        column = _grouped_selectbox(f"第 {idx + 1} 项", sources[source_key].columns.tolist(), f"{mode}_term_{idx}")
+        coefficient = st.sidebar.number_input(
+            f"第 {idx + 1} 项系数",
+            value=(1.0 if idx == 0 else (-1.0 if mode == "价差" else 1.0)),
+            step=0.1,
+            format="%.2f",
+            key=f"{mode}_term_{idx}_coef",
+        )
+        multiplier_col = None
+        if st.sidebar.checkbox(f"第 {idx + 1} 项乘 Wind 列", value=False, key=f"{mode}_term_{idx}_mult_flag"):
+            default_index = wind_columns.index(fx_default) if fx_default in wind_columns else 0
+            multiplier_col = st.sidebar.selectbox(
+                f"第 {idx + 1} 项乘数列",
+                wind_columns,
+                index=default_index,
+                key=f"{mode}_term_{idx}_mult_col",
+            )
 
-    portfolio_name = st.sidebar.selectbox("选择预设组合", portfolios.columns.tolist())
-    formula_lookup = load_yaml(BASE_DIR / "config" / "strategy.yaml").get("strategies", [])
-    formula_map = {item.get("name"): item.get("formula", "") for item in formula_lookup}
-    return portfolio_name, portfolios[portfolio_name], formula_map.get(portfolio_name, portfolio_name)
+        side = "numerator"
+        if mode == "价格比":
+            default_side = "numerator" if idx == 0 else "denominator"
+            side = st.sidebar.selectbox(
+                f"第 {idx + 1} 项归属",
+                ["numerator", "denominator"],
+                format_func=lambda x: "分子" if x == "numerator" else "分母",
+                index=0 if default_side == "numerator" else 1,
+                key=f"{mode}_term_{idx}_side",
+            )
+
+        terms.append(
+            {
+                "source": source_key,
+                "column": column,
+                "coefficient": float(coefficient),
+                "multiplier_col": multiplier_col,
+                "side": side,
+            }
+        )
+
+    return terms
+
+
+def _build_combo_frame(
+    sources: dict[str, pd.DataFrame],
+    mode: str,
+    terms: list[dict[str, object]],
+) -> tuple[pd.DataFrame, str, str, list[str]]:
+    frame = pd.DataFrame(index=sources["wind"].index.union(sources["manual"].index))
+    required_cols: list[str] = []
+    numerator_exprs: list[str] = []
+    denominator_exprs: list[str] = []
+    spread_exprs: list[str] = []
+    target_parts: list[pd.Series] = []
+    denominator_parts: list[pd.Series] = []
+    name_tokens: list[str] = []
+
+    for idx, term in enumerate(terms, start=1):
+        source_key = str(term["source"])
+        column = str(term["column"])
+        coefficient = float(term["coefficient"])
+        multiplier_col = term["multiplier_col"]
+
+        base_col_name = f"term_{idx}_{column}"
+        base_series = sources[source_key][column].rename(base_col_name)
+        frame = frame.join(base_series, how="outer")
+        required_cols.append(base_col_name)
+        value_series = frame[base_col_name]
+
+        if multiplier_col:
+            mult_col_name = f"term_{idx}_{multiplier_col}"
+            if mult_col_name not in frame.columns:
+                frame = frame.join(sources["wind"][str(multiplier_col)].rename(mult_col_name), how="outer")
+            required_cols.append(mult_col_name)
+            value_series = value_series * frame[mult_col_name]
+
+        expr = _build_term_expression(coefficient, column, str(multiplier_col) if multiplier_col else None)
+        calc_col = f"calc_term_{idx}"
+        frame[calc_col] = coefficient * value_series
+        required_cols.append(calc_col)
+        name_tokens.append(column)
+
+        if mode == "价格比":
+            if term["side"] == "numerator":
+                target_parts.append(frame[calc_col])
+                numerator_exprs.append(expr)
+            else:
+                denominator_parts.append(frame[calc_col])
+                denominator_exprs.append(expr)
+        else:
+            target_parts.append(frame[calc_col])
+            spread_exprs.append(expr)
+
+    if mode == "价格比":
+        numerator = sum(target_parts[1:], target_parts[0]) if len(target_parts) > 1 else target_parts[0]
+        denominator = sum(denominator_parts[1:], denominator_parts[0]) if len(denominator_parts) > 1 else denominator_parts[0]
+        frame["target"] = numerator / denominator.replace(0, pd.NA)
+        formula = f"({' + '.join(numerator_exprs)}) / ({' + '.join(denominator_exprs)})"
+        target_name = "_".join(name_tokens) + "_ratio"
+    else:
+        target = sum(target_parts[1:], target_parts[0]) if len(target_parts) > 1 else target_parts[0]
+        frame["target"] = target
+        formula = " + ".join(spread_exprs).replace("+ -", "- ")
+        target_name = "_".join(name_tokens) + "_spread"
+
+    return frame, target_name, formula, required_cols
 
 
 def _sidebar_excel_path() -> str:
@@ -316,10 +459,45 @@ def _sidebar_excel_path() -> str:
     return st.session_state["uploaded_excel_path"]
 
 
+def _select_analysis_target(
+    sources: dict[str, pd.DataFrame],
+    portfolios: pd.DataFrame,
+    strategy_df: pd.DataFrame,
+) -> tuple[str, pd.Series, str, pd.DataFrame | None, pd.DataFrame | None]:
+    mode = st.sidebar.radio("分析对象", ["单品种", "跨表/价差组合", "预设组合"])
+
+    if mode == "单品种":
+        source_key = st.sidebar.selectbox("数据来源", ["wind", "manual"], format_func=lambda x: SOURCE_LABELS[x])
+        source_df = sources[source_key]
+        column = _grouped_selectbox("选择", source_df.columns.tolist(), "single")
+        frame = source_df[[column]].rename(columns={column: "target"})
+        frame, _ = _apply_date_filter(frame, ["target"], "single")
+        return f"{SOURCE_LABELS[source_key]}:{column}", frame["target"], column, None, None
+
+    if mode == "跨表/价差组合":
+        combo_mode = st.sidebar.selectbox("组合方式", ["价差", "价格比"])
+        terms = _collect_term_configs(sources, combo_mode)
+        combo_frame, default_name, formula, required_cols = _build_combo_frame(sources, combo_mode, terms)
+        filtered_frame, _ = _apply_date_filter(combo_frame, required_cols, "combo")
+        coverage = _build_coverage_table(combo_frame, required_cols)
+        custom_name = st.sidebar.text_input("组合名称", value="")
+        return custom_name.strip() or default_name, filtered_frame["target"], formula, combo_frame, coverage
+
+    if portfolios.empty:
+        fallback = sources["wind"].columns[0]
+        return fallback, sources["wind"][fallback], fallback, None, None
+
+    name = _grouped_strategy_selectbox(strategy_df, "preset")
+    formula_map = dict(zip(strategy_df["StrategyName"], strategy_df["Formula"]))
+    frame = portfolios[[name]].rename(columns={name: "target"})
+    frame, _ = _apply_date_filter(frame, ["target"], "preset")
+    return name, frame["target"], formula_map.get(name, name), None, None
+
+
 def main() -> None:
     st.set_page_config(page_title="Wind 看板", layout="wide")
-    st.title("Wind 品种与组合分析看板")
-    st.caption("支持单品种、临时价格比/价差组合、预设组合，以及可调风控与季节性分析。")
+    st.title("Wind 与手工价格联合分析看板")
+    st.caption("支持 Wind sheet、manual sheet、2-3 项价差/价格比组合、重叠区间分析，以及按 USDCHY 参与计算。")
 
     workbook_path = _sidebar_excel_path()
     workbook = Path(workbook_path)
@@ -333,20 +511,19 @@ def main() -> None:
             st.warning("Excel 自动刷新失败或被跳过，请检查本机 Excel/pywin32 环境。")
 
     try:
-        raw_data, portfolios = load_all_data(workbook_path)
+        sources, portfolios, strategy_df = load_all_data(workbook_path)
     except Exception as exc:
         st.error(f"数据加载失败: {exc}")
         logger.exception("数据加载失败")
         return
 
-    target_name, series, formula = _select_analysis_series(raw_data, portfolios)
+    target_name, series, formula, combo_frame, coverage = _select_analysis_target(sources, portfolios, strategy_df)
     series = series.dropna()
     if series.empty:
-        st.warning("当前选择没有可用数据。")
+        st.warning("当前选择下没有可分析的数据。")
         return
 
     controls = _risk_controls(series)
-
     st.sidebar.markdown("### 当前定义")
     st.sidebar.code(formula)
 
@@ -356,29 +533,35 @@ def main() -> None:
         st.subheader(target_name)
         st.caption(f"数据文件: {workbook_path}")
         st.caption(f"样本区间: {series.index.min().date()} 至 {series.index.max().date()}")
+        if coverage is not None:
+            st.markdown("#### 可用价格区间")
+            st.dataframe(coverage, use_container_width=True, hide_index=True)
         _render_risk_section(series, controls)
         st.plotly_chart(px.line(series, title=f"{target_name} 历史走势"), use_container_width=True)
         st.plotly_chart(px.histogram(series, nbins=50, title=f"{target_name} 数值分布"), use_container_width=True)
 
     with risk_tab:
         st.subheader(f"{target_name} 风控细节")
+        if coverage is not None:
+            st.markdown("#### 各项有效区间")
+            st.dataframe(coverage, use_container_width=True, hide_index=True)
         _render_risk_section(series, controls)
-        returns = series.pct_change().dropna() if (series > 0).all() else series.diff().dropna()
-        if not returns.empty:
-            st.plotly_chart(px.histogram(returns, nbins=60, title="收益/变动分布"), use_container_width=True)
-            rolling_rank = series.rank(pct=True) * 100
-            st.plotly_chart(px.line(rolling_rank, title="全样本历史百分位路径"), use_container_width=True)
 
     with seasonal_tab:
         st.subheader(f"{target_name} 季节性分析")
         _render_seasonality_section(series)
 
     with data_tab:
-        st.subheader("原始数据预览")
-        st.dataframe(raw_data.tail(200), use_container_width=True)
+        st.subheader("Wind 数据预览")
+        st.dataframe(sources["wind"].tail(200), use_container_width=True)
+        st.subheader("Manual 数据预览")
+        st.dataframe(sources["manual"].tail(200), use_container_width=True)
         if not portfolios.empty:
             st.subheader("预设组合预览")
             st.dataframe(portfolios.tail(200), use_container_width=True)
+        if combo_frame is not None:
+            st.subheader("当前组合对齐数据")
+            st.dataframe(combo_frame.tail(200), use_container_width=True)
         st.subheader("当前分析序列")
         st.dataframe(series.tail(200).rename(target_name).to_frame(), use_container_width=True)
 

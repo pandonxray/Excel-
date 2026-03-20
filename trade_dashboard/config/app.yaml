@@ -1,10 +1,15 @@
 excel:
   workbook_path: D:/坚果云/油气-djx-zr/windcalculate.xlsx
   data_sheet: wind_raw_data
+  manual_sheet: manual_data
   strategy_sheet:
   date_column: Wind
+  manual_date_column: price_date
   header_rows: [0, 1]
+  manual_header_rows: 0
   column_name_row: 0
+  manual_column_name_row: 0
+  fx_column: USDCHY
   refresh_timeout_sec: 180
 
 analysis:
