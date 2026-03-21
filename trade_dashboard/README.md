@@ -1,62 +1,135 @@
-# Wind 品种与组合分析看板
+# 交易研究看板
 
-一个面向本地 Excel 数据的中文分析看板，适合用于 Wind 导出的期货/化工品价格序列分析。
+一个面向日度时间序列研究的中文看板，适合对 Wind 导出的商品、化工、能源相关 Excel 数据做研究分析。
 
-项目当前支持：
+当前版本重点支持：
 
-- 读取 Wind 样式的双表头 Excel
 - 单品种分析
-- 临时价格比 / 价差组合分析
+- 月差分析
+- 跨表/价差组合分析
 - 预设组合分析
-- 风控指标：百分位、ZScore、VaR、ES、波动率、最大回撤
-- 季节性分析：历年曲线、均值带、月度分布、同期百分位
-- 侧边栏切换 Excel 路径
-- Windows 一键启动
+- 驱动拆解
+- 风控指标分析
+- 季节性分析
+- 本地 Excel 刷新与上传
 
-## 当前适配的 Excel 格式
+## 适用场景
 
-当前项目已适配如下结构：
+适合以下类型的研究工作：
 
-- Sheet 名：`wind_raw_data`
-- 第 1 行：简称代码，例如 `PP01`、`LPG01`、`MA05`
-- 第 2 行：中文指标说明
-- 第 1 列：`Wind`，值为 Excel 序列日期
+- 跟踪单个品种的历史位置、波动和分布
+- 研究月差、跨品种价差、成本端价差
+- 观察预设组合的驱动来源
+- 做日度层面的风险评估和季节性复盘
 
-示例：
+本项目默认只依赖日度 Excel 数据，不依赖实时行情。
 
-| Wind | PP01 | PP02 | LPG01 | MA05 |
-|---|---:|---:|---:|---:|
-| 46098 | 7771 | 7768 | 5184 | 2847 |
+## 当前功能
 
-## 主要功能
+### 1. 单品种
 
-### 1. 单品种分析
+- 按数据源和品种分组选择序列
+- 查看时间序列、分布、风控指标、季节性
 
-- 支持按品种类别二级选择，例如先选 `PP`，再选 `PP01`
-- 查看走势、分布、季节性、风控指标
+### 2. 月差
 
-### 2. 自定义组合
+- 新增 `月差` 作为分析对象
+- 支持先选品种，再选近月和远月
+- 例如：
+  `L05 - L09`
+  `L09 - L01`
 
-- 支持临时创建价格比或价差组合
-- 支持左右腿权重设置
-- 不需要先改配置文件
+### 3. 跨表/价差组合
 
-### 3. 风控参数交互
+- 支持价差组合
+- 支持比值组合
+- 支持多腿自定义组合
+- 支持乘数项和系数设置
 
-侧边栏可直接设置：
+### 4. 预设组合
 
-- 百分位窗口
-- ZScore 窗口
-- VaR 回看窗口
-- VaR 期限
-- VaR 置信度
-- 指定某个输入值，查看其百分位和 ZScore
+- 从 `config/strategy.yaml` 加载策略
+- 支持分类查看
+- 当前已扩展：
+  `LPG内外价差`
+  `FEI_PDH`
+  `PP-L`
+  `MTO`
 
-### 4. 季节性分析
+### 5. 驱动拆解
 
-- 季节图已做连续化处理
-- 自动补全年日历索引
-- 对缺口做线性插值，便于观察连续走势
+新增通用驱动拆解框架，支持：
+
+- 组件序列拆解
+- 派生项展示
+- 驱动路径标准化
+- 区间贡献拆解
+- 驱动诊断
+- 敏感度分析
+- 情景分析
+
+其中：
+
+- `驱动路径标准化` 支持用户自选起点
+- `贡献拆解` 支持用户自选分析区间
+- 页面内提供术语说明和计算逻辑说明
+
+### 6. 风控分析
+
+支持常用研究指标：
+
+- 历史分位
+- Z-Score
+- VaR
+- ES
+- 波动率
+- 最大回撤
+- 自定义目标值的定位分析
+
+### 7. 季节性分析
+
+支持：
+
+- 历年季节路径
+- 季节均值与波动带
+- 月度分布箱线图
+- 季节性分位与季节性偏离
+
+当前版本新增：
+
+- 季节图纵轴上下限可手动输入
+
+### 8. Excel 输入方式
+
+左侧栏支持两种方式：
+
+- 本地路径
+- 拖拽/上传 Excel
+
+### 9. Excel 刷新
+
+支持在 Windows 本机环境下调用 Excel 刷新工作簿。
+
+## Excel 数据要求
+
+当前默认配置见 [config/app.yaml](/D:/codex/Excel-/trade_dashboard/config/app.yaml)。
+
+默认读取：
+
+- `wind_raw_data`
+- `manual_data`
+
+默认字段：
+
+- 日期列：`Wind`
+- 手工数据日期列：`price_date`
+- 汇率列：`USDCHY`
+
+典型结构示意：
+
+| Wind | PP01 | L01 | LPG01 | FEI01 | USDCHY |
+|---|---:|---:|---:|---:|---:|
+| 46098 | 7771 | 8120 | 4387 | 615 | 7.23 |
 
 ## 项目结构
 
@@ -67,29 +140,32 @@ trade_dashboard/
 │  ├─ metric.yaml
 │  └─ strategy.yaml
 ├─ scripts/
-│  ├─ bootstrap_env.py
+│  ├─ build_exe.ps1
 │  ├─ setup_env.ps1
-│  ├─ setup_env.sh
-│  ├─ start_dashboard.ps1
-│  └─ build_exe.ps1
+│  └─ start_dashboard.ps1
 ├─ src/
 │  ├─ dashboard.py
 │  ├─ data_loader.py
+│  ├─ driver_engine.py
 │  ├─ excel_refresh.py
 │  ├─ formula_engine.py
 │  ├─ portfolio_engine.py
 │  ├─ risk_engine.py
 │  ├─ seasonal_engine.py
-│  ├─ utils.py
-│  └─ launcher.py
+│  └─ utils.py
 ├─ tests/
+│  ├─ test_data_loader.py
+│  ├─ test_driver_engine.py
+│  ├─ test_formula_engine.py
+│  ├─ test_risk_engine.py
+│  └─ test_seasonal_engine.py
 ├─ requirements.txt
 ├─ requirements-build.txt
 ├─ start_dashboard.bat
 └─ README.md
 ```
 
-## 安装依赖
+## 安装
 
 ### 方式一：直接安装
 
@@ -98,128 +174,121 @@ cd trade_dashboard
 python -m pip install -r requirements.txt
 ```
 
-### 方式二：使用脚本初始化
+### 方式二：使用项目虚拟环境
 
 ```powershell
 cd trade_dashboard
-powershell -ExecutionPolicy Bypass -File .\scripts\setup_env.ps1
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-## 启动方式
+说明：
 
-### 方式一：直接运行
+- 当前依赖已限制 `numpy<2`
+- 启动脚本会优先使用项目下的 `.venv`
 
-```powershell
-cd trade_dashboard
-python -m streamlit run src/dashboard.py --server.headless true --server.port 8501
-```
+## 启动
 
-### 方式二：双击启动
+### 方式一：双击启动
 
-直接双击：
+直接运行：
 
 - `start_dashboard.bat`
 
-### 方式三：PowerShell 启动
+### 方式二：PowerShell 启动
 
 ```powershell
 cd trade_dashboard
 .\scripts\start_dashboard.ps1
 ```
 
+### 方式三：命令行启动
+
+```powershell
+cd trade_dashboard
+.\.venv\Scripts\python.exe -m streamlit run src/dashboard.py --server.headless true --server.port 8501
+```
+
 启动后默认地址：
 
 - [http://localhost:8501](http://localhost:8501)
 
-## Excel 刷新说明
+## README 对应的当前更新点
 
-看板中的“刷新 Excel 数据”按钮依赖：
+本次版本包含这些重点更新：
 
-- Windows
-- 桌面版 Excel
-- `pywin32`
+- 修复启动时误用系统 Python/Anaconda 的问题
+- 增加 `LPG内外价差` 预设组合
+- 新增通用驱动拆解引擎
+- 驱动拆解页增加图表、说明、区间分析和标准化起点控制
+- 新增 `月差` 分析对象
+- 季节图支持纵轴范围手动输入
+- 增加术语说明与计算逻辑说明
 
-安装：
+## 驱动拆解说明
 
-```powershell
-python -m pip install pywin32
-```
+驱动拆解页主要回答三个问题：
 
-如果没有这些环境，按钮会提示跳过，但不影响直接读取现有 Excel 文件。
+1. 当前组合由哪些底层变量构成
+2. 某一段时间内是谁推动了变化
+3. 如果某个驱动继续波动，目标序列可能如何变化
 
-## Excel 文件选择
+当前框架支持：
 
-看板左侧支持两种方式：
+- 自动识别简单价差结构
+- 配置化拆解复杂组合
+- 日期切换系数
+- 区间归因
+- 敏感度与情景分析
 
-- `本地路径`：直接输入或粘贴 Excel 绝对路径
-- `拖拽/上传 Excel`：把 Excel 文件拖进侧边栏，或者点击后从本地文件夹选择文件
+驱动拆解的核心代码在：
 
-这意味着你现在既可以手工填路径，也可以直接像普通桌面工具一样选文件。
+- [src/driver_engine.py](/D:/codex/Excel-/trade_dashboard/src/driver_engine.py)
 
-## 运行测试
+## 测试
+
+运行全部测试：
 
 ```powershell
 cd trade_dashboard
-python -m pytest -q
+.\.venv\Scripts\python.exe -m pytest --rootdir . tests
 ```
 
-## 打包为 EXE
+如果只想跑驱动拆解相关测试：
 
-### 安装打包依赖
+```powershell
+cd trade_dashboard
+.\.venv\Scripts\python.exe -m pytest --rootdir . tests/test_driver_engine.py
+```
+
+## 打包 EXE
+
+安装打包依赖：
 
 ```powershell
 cd trade_dashboard
 python -m pip install -r requirements-build.txt
 ```
 
-### 执行打包
+执行打包：
 
 ```powershell
 cd trade_dashboard
 powershell -ExecutionPolicy Bypass -File .\scripts\build_exe.ps1
 ```
 
-### 生成位置
+## 注意事项
 
-打包完成后可在这里找到：
+- 当前 `config/app.yaml` 中的 Excel 路径是本地默认路径，跨机器使用时建议改成自己的路径
+- 如果要使用 Excel 刷新功能，需要本机具备桌面版 Excel 和对应环境
+- `.venv` 已通过 `.gitignore` 排除，不会被提交到仓库
 
-- `dist\WindDashboard\WindDashboard.exe`
+## 后续建议
 
-注意：
+后面还可以继续增强：
 
-- 真正可迁移的是整个 `dist\WindDashboard` 文件夹，不是只拷贝单独一个 `WindDashboard.exe`
-- 这个文件夹里还包含 `_internal` 运行时依赖，缺了它 exe 无法正常工作
-- 复制到其他 Windows 电脑时，建议整文件夹一起拷贝
-- 目标电脑不需要单独安装 Python
-
-推荐做法：
-
-1. 在你的开发电脑执行打包
-2. 把整个 `dist\WindDashboard` 文件夹复制到目标电脑
-3. 在目标电脑双击 `WindDashboard.exe`
-4. 第一次打开后，在看板左侧选择或拖入目标 Excel 文件
-
-如果你希望跨电脑使用更稳，建议：
-
-- 尽量在和目标电脑相同架构的 Windows 环境下打包
-- 打包机和目标机都使用 64 位 Windows
-- 如果目标电脑没有桌面版 Excel，就不要依赖“刷新 Excel 数据”按钮，直接读取现成文件即可
-
-## 当前默认预设组合
-
-当前 `config/strategy.yaml` 中包含示例组合：
-
-- `PP01_LPG01_ratio`
-- `PP05_MA05_spread`
-- `L01_PP01_spread`
-- `PP09_L09_ratio`
-
-你也可以继续扩展自己的组合库。
-
-## 后续可继续扩展
-
-- 多腿组合公式编辑器
-- 历史 Excel 路径记录
-- 自动打开浏览器
-- 打包成带图标的桌面应用
-- 输出日报或快照
+- 月差曲线总览
+- 区间内自动结论摘要
+- 研究结论卡片
+- 驱动领先/滞后分析
+- 结构断点识别
