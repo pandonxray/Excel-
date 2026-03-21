@@ -1,5 +1,5 @@
 excel:
-  workbook_path: D:/坚果云/油气-djx-zr/windcalculate.xlsx
+  workbook_path: C:/Users/74100/Nutstore/1/油气-djx-/windcalculate.xlsx
   data_sheet: wind_raw_data
   manual_sheet: manual_data
   strategy_sheet:

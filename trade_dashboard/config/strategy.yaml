@@ -40,18 +40,459 @@ strategies:
     enabled: true
     category: FEI_PDH
     notes: FEI 01 with different tariff coefficients before and after 2025-04-01
+    decomposition:
+      type: spread
+      target_label: FEI PDH 01
+      target_expr: domestic_pp - fei * fx * tariff * vat * yield_factor
+      components:
+        - key: domestic_pp
+          label: PP01
+          expr: PP01
+        - key: fei
+          label: FEI01
+          expr: FEI01
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: yield_factor
+          label: Yield factor
+          expr: 1.17
+      derived:
+        - key: import_cost
+          label: Imported PDH cost
+          expr: fei * fx * tariff * vat * yield_factor
 
   - name: FEI_PDH_05
     formula: (DATE_INT < 20250401) * (PP05 - FEI05 * USDCHY * 1.01 * 1.09 * 1.17) + (DATE_INT >= 20250401) * (PP05 - FEI05 * USDCHY * 1.11 * 1.09 * 1.17)
     enabled: true
     category: FEI_PDH
     notes: FEI 05 with different tariff coefficients before and after 2025-04-01
+    decomposition:
+      type: spread
+      target_label: FEI PDH 05
+      target_expr: domestic_pp - fei * fx * tariff * vat * yield_factor
+      components:
+        - key: domestic_pp
+          label: PP05
+          expr: PP05
+        - key: fei
+          label: FEI05
+          expr: FEI05
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: yield_factor
+          label: Yield factor
+          expr: 1.17
+      derived:
+        - key: import_cost
+          label: Imported PDH cost
+          expr: fei * fx * tariff * vat * yield_factor
 
   - name: FEI_PDH_09
     formula: (DATE_INT < 20250401) * (PP09 - FEI09 * USDCHY * 1.01 * 1.09 * 1.17) + (DATE_INT >= 20250401) * (PP09 - FEI09 * USDCHY * 1.11 * 1.09 * 1.17)
     enabled: true
     category: FEI_PDH
     notes: FEI 09 with different tariff coefficients before and after 2025-04-01
+    decomposition:
+      type: spread
+      target_label: FEI PDH 09
+      target_expr: domestic_pp - fei * fx * tariff * vat * yield_factor
+      components:
+        - key: domestic_pp
+          label: PP09
+          expr: PP09
+        - key: fei
+          label: FEI09
+          expr: FEI09
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: yield_factor
+          label: Yield factor
+          expr: 1.17
+      derived:
+        - key: import_cost
+          label: Imported PDH cost
+          expr: fei * fx * tariff * vat * yield_factor
+
+  - name: LPG_FEI_01_spread
+    formula: (DATE_INT < 20250401) * (LPG01 - FEI01 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG01 - FEI01 * USDCHY * 1.09 * 1.11)
+    enabled: true
+    category: LPG内外价差
+    notes: LPG01 minus FEI01 with tariff coefficient switch on 2025-04-01
+    decomposition:
+      type: spread
+      target_label: LPG FEI 01 spread
+      target_expr: domestic_lpg - fei * fx * vat * tariff
+      components:
+        - key: domestic_lpg
+          label: LPG01
+          expr: LPG01
+        - key: fei
+          label: FEI01
+          expr: FEI01
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+      derived:
+        - key: import_cost
+          label: Imported LPG cost
+          expr: fei * fx * vat * tariff
+
+  - name: LPG_FEI_02_spread
+    formula: (DATE_INT < 20250401) * (LPG02 - FEI02 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG02 - FEI02 * USDCHY * 1.09 * 1.11)
+    enabled: true
+    category: LPG内外价差
+    notes: LPG02 minus FEI02 with tariff coefficient switch on 2025-04-01
+    decomposition:
+      type: spread
+      target_label: LPG FEI 02 spread
+      target_expr: domestic_lpg - fei * fx * vat * tariff
+      components:
+        - key: domestic_lpg
+          label: LPG02
+          expr: LPG02
+        - key: fei
+          label: FEI02
+          expr: FEI02
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+      derived:
+        - key: import_cost
+          label: Imported LPG cost
+          expr: fei * fx * vat * tariff
+
+  - name: LPG_FEI_03_spread
+    formula: (DATE_INT < 20250401) * (LPG03 - FEI03 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG03 - FEI03 * USDCHY * 1.09 * 1.11)
+    enabled: true
+    category: LPG内外价差
+    notes: LPG03 minus FEI03 with tariff coefficient switch on 2025-04-01
+    decomposition:
+      type: spread
+      target_label: LPG FEI 03 spread
+      target_expr: domestic_lpg - fei * fx * vat * tariff
+      components:
+        - key: domestic_lpg
+          label: LPG03
+          expr: LPG03
+        - key: fei
+          label: FEI03
+          expr: FEI03
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+      derived:
+        - key: import_cost
+          label: Imported LPG cost
+          expr: fei * fx * vat * tariff
+
+  - name: LPG_FEI_04_spread
+    formula: (DATE_INT < 20250401) * (LPG04 - FEI04 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG04 - FEI04 * USDCHY * 1.09 * 1.11)
+    enabled: true
+    category: LPG内外价差
+    notes: LPG04 minus FEI04 with tariff coefficient switch on 2025-04-01
+    decomposition:
+      type: spread
+      target_label: LPG FEI 04 spread
+      target_expr: domestic_lpg - fei * fx * vat * tariff
+      components:
+        - key: domestic_lpg
+          label: LPG04
+          expr: LPG04
+        - key: fei
+          label: FEI04
+          expr: FEI04
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+      derived:
+        - key: import_cost
+          label: Imported LPG cost
+          expr: fei * fx * vat * tariff
+
+  - name: LPG_FEI_05_spread
+    formula: (DATE_INT < 20250401) * (LPG05 - FEI05 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG05 - FEI05 * USDCHY * 1.09 * 1.11)
+    enabled: true
+    category: LPG内外价差
+    notes: LPG05 minus FEI05 with tariff coefficient switch on 2025-04-01
+    decomposition:
+      type: spread
+      target_label: LPG FEI 05 spread
+      target_expr: domestic_lpg - fei * fx * vat * tariff
+      components:
+        - key: domestic_lpg
+          label: LPG05
+          expr: LPG05
+        - key: fei
+          label: FEI05
+          expr: FEI05
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+      derived:
+        - key: import_cost
+          label: Imported LPG cost
+          expr: fei * fx * vat * tariff
+
+  - name: LPG_FEI_06_spread
+    formula: (DATE_INT < 20250401) * (LPG06 - FEI06 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG06 - FEI06 * USDCHY * 1.09 * 1.11)
+    enabled: true
+    category: LPG内外价差
+    notes: LPG06 minus FEI06 with tariff coefficient switch on 2025-04-01
+    decomposition:
+      type: spread
+      target_label: LPG FEI 06 spread
+      target_expr: domestic_lpg - fei * fx * vat * tariff
+      components:
+        - key: domestic_lpg
+          label: LPG06
+          expr: LPG06
+        - key: fei
+          label: FEI06
+          expr: FEI06
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+      derived:
+        - key: import_cost
+          label: Imported LPG cost
+          expr: fei * fx * vat * tariff
+
+  - name: LPG_FEI_07_spread
+    formula: (DATE_INT < 20250401) * (LPG07 - FEI07 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG07 - FEI07 * USDCHY * 1.09 * 1.11)
+    enabled: true
+    category: LPG内外价差
+    notes: LPG07 minus FEI07 with tariff coefficient switch on 2025-04-01
+    decomposition:
+      type: spread
+      target_label: LPG FEI 07 spread
+      target_expr: domestic_lpg - fei * fx * vat * tariff
+      components:
+        - key: domestic_lpg
+          label: LPG07
+          expr: LPG07
+        - key: fei
+          label: FEI07
+          expr: FEI07
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+      derived:
+        - key: import_cost
+          label: Imported LPG cost
+          expr: fei * fx * vat * tariff
+
+  - name: LPG_FEI_08_spread
+    formula: (DATE_INT < 20250401) * (LPG08 - FEI08 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG08 - FEI08 * USDCHY * 1.09 * 1.11)
+    enabled: true
+    category: LPG内外价差
+    notes: LPG08 minus FEI08 with tariff coefficient switch on 2025-04-01
+    decomposition:
+      type: spread
+      target_label: LPG FEI 08 spread
+      target_expr: domestic_lpg - fei * fx * vat * tariff
+      components:
+        - key: domestic_lpg
+          label: LPG08
+          expr: LPG08
+        - key: fei
+          label: FEI08
+          expr: FEI08
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+      derived:
+        - key: import_cost
+          label: Imported LPG cost
+          expr: fei * fx * vat * tariff
+
+  - name: LPG_FEI_09_spread
+    formula: (DATE_INT < 20250401) * (LPG09 - FEI09 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG09 - FEI09 * USDCHY * 1.09 * 1.11)
+    enabled: true
+    category: LPG内外价差
+    notes: LPG09 minus FEI09 with tariff coefficient switch on 2025-04-01
+    decomposition:
+      type: spread
+      target_label: LPG FEI 09 spread
+      target_expr: domestic_lpg - fei * fx * vat * tariff
+      components:
+        - key: domestic_lpg
+          label: LPG09
+          expr: LPG09
+        - key: fei
+          label: FEI09
+          expr: FEI09
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+      derived:
+        - key: import_cost
+          label: Imported LPG cost
+          expr: fei * fx * vat * tariff
+
+  - name: LPG_FEI_10_spread
+    formula: (DATE_INT < 20250401) * (LPG10 - FEI10 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG10 - FEI10 * USDCHY * 1.09 * 1.11)
+    enabled: true
+    category: LPG内外价差
+    notes: LPG10 minus FEI10 with tariff coefficient switch on 2025-04-01
+    decomposition:
+      type: spread
+      target_label: LPG FEI 10 spread
+      target_expr: domestic_lpg - fei * fx * vat * tariff
+      components:
+        - key: domestic_lpg
+          label: LPG10
+          expr: LPG10
+        - key: fei
+          label: FEI10
+          expr: FEI10
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+      derived:
+        - key: import_cost
+          label: Imported LPG cost
+          expr: fei * fx * vat * tariff
+
+  - name: LPG_FEI_11_spread
+    formula: (DATE_INT < 20250401) * (LPG11 - FEI11 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG11 - FEI11 * USDCHY * 1.09 * 1.11)
+    enabled: true
+    category: LPG内外价差
+    notes: LPG11 minus FEI11 with tariff coefficient switch on 2025-04-01
+    decomposition:
+      type: spread
+      target_label: LPG FEI 11 spread
+      target_expr: domestic_lpg - fei * fx * vat * tariff
+      components:
+        - key: domestic_lpg
+          label: LPG11
+          expr: LPG11
+        - key: fei
+          label: FEI11
+          expr: FEI11
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+      derived:
+        - key: import_cost
+          label: Imported LPG cost
+          expr: fei * fx * vat * tariff
+
+  - name: LPG_FEI_12_spread
+    formula: (DATE_INT < 20250401) * (LPG12 - FEI12 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG12 - FEI12 * USDCHY * 1.09 * 1.11)
+    enabled: true
+    category: LPG内外价差
+    notes: LPG12 minus FEI12 with tariff coefficient switch on 2025-04-01
+    decomposition:
+      type: spread
+      target_label: LPG FEI 12 spread
+      target_expr: domestic_lpg - fei * fx * vat * tariff
+      components:
+        - key: domestic_lpg
+          label: LPG12
+          expr: LPG12
+        - key: fei
+          label: FEI12
+          expr: FEI12
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+      derived:
+        - key: import_cost
+          label: Imported LPG cost
+          expr: fei * fx * vat * tariff
 
   - name: MTO_01
     formula: PP01 - 3 * MA01
