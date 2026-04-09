@@ -251,6 +251,222 @@ strategies:
           label: Imported PDH cost
           expr: fei * fx * tariff * vat * yield_factor
 
+  - name: FEI_MOPJ_01
+    formula: FEI01 - NAP01
+    enabled: true
+    category: FEI-MOPJ
+    notes: Uses NAP01 as the MOPJ leg
+
+  - name: FEI_MOPJ_02
+    formula: FEI02 - NAP02
+    enabled: true
+    category: FEI-MOPJ
+    notes: Uses NAP02 as the MOPJ leg
+
+  - name: FEI_MOPJ_03
+    formula: FEI03 - NAP03
+    enabled: true
+    category: FEI-MOPJ
+    notes: Uses NAP03 as the MOPJ leg
+
+  - name: FEI_MOPJ_04
+    formula: FEI04 - NAP04
+    enabled: true
+    category: FEI-MOPJ
+    notes: Uses NAP04 as the MOPJ leg
+
+  - name: FEI_MOPJ_05
+    formula: FEI05 - NAP05
+    enabled: true
+    category: FEI-MOPJ
+    notes: Uses NAP05 as the MOPJ leg
+
+  - name: FEI_MOPJ_06
+    formula: FEI06 - NAP06
+    enabled: true
+    category: FEI-MOPJ
+    notes: Uses NAP06 as the MOPJ leg
+
+  - name: FEI_MOPJ_07
+    formula: FEI07 - NAP07
+    enabled: true
+    category: FEI-MOPJ
+    notes: Uses NAP07 as the MOPJ leg
+
+  - name: FEI_MOPJ_08
+    formula: FEI08 - NAP08
+    enabled: true
+    category: FEI-MOPJ
+    notes: Uses NAP08 as the MOPJ leg
+
+  - name: FEI_MOPJ_09
+    formula: FEI09 - NAP09
+    enabled: true
+    category: FEI-MOPJ
+    notes: Uses NAP09 as the MOPJ leg
+
+  - name: FEI_MOPJ_10
+    formula: FEI10 - NAP10
+    enabled: true
+    category: FEI-MOPJ
+    notes: Uses NAP10 as the MOPJ leg
+
+  - name: FEI_MOPJ_11
+    formula: FEI11 - NAP11
+    enabled: true
+    category: FEI-MOPJ
+    notes: Uses NAP11 as the MOPJ leg
+
+  - name: FEI_MOPJ_12
+    formula: FEI12 - NAP12
+    enabled: true
+    category: FEI-MOPJ
+    notes: Uses NAP12 as the MOPJ leg
+
+  - name: FEI_MB_01
+    formula: FEI01 - MB01
+    enabled: true
+    category: FEI-MB
+    notes: FEI01 minus MB01
+
+  - name: FEI_MB_02
+    formula: FEI02 - MB02
+    enabled: true
+    category: FEI-MB
+    notes: FEI02 minus MB02
+
+  - name: FEI_MB_03
+    formula: FEI03 - MB03
+    enabled: true
+    category: FEI-MB
+    notes: FEI03 minus MB03
+
+  - name: FEI_MB_04
+    formula: FEI04 - MB04
+    enabled: true
+    category: FEI-MB
+    notes: FEI04 minus MB04
+
+  - name: FEI_MB_05
+    formula: FEI05 - MB05
+    enabled: true
+    category: FEI-MB
+    notes: FEI05 minus MB05
+
+  - name: FEI_MB_06
+    formula: FEI06 - MB06
+    enabled: true
+    category: FEI-MB
+    notes: FEI06 minus MB06
+
+  - name: FEI_MB_07
+    formula: FEI07 - MB07
+    enabled: true
+    category: FEI-MB
+    notes: FEI07 minus MB07
+
+  - name: FEI_MB_08
+    formula: FEI08 - MB08
+    enabled: true
+    category: FEI-MB
+    notes: FEI08 minus MB08
+
+  - name: FEI_MB_09
+    formula: FEI09 - MB09
+    enabled: true
+    category: FEI-MB
+    notes: FEI09 minus MB09
+
+  - name: FEI_MB_10
+    formula: FEI10 - MB10
+    enabled: true
+    category: FEI-MB
+    notes: FEI10 minus MB10
+
+  - name: FEI_MB_11
+    formula: FEI11 - MB11
+    enabled: true
+    category: FEI-MB
+    notes: FEI11 minus MB11
+
+  - name: FEI_MB_12
+    formula: FEI12 - MB12
+    enabled: true
+    category: FEI-MB
+    notes: FEI12 minus MB12
+
+  - name: FEI_CP_01
+    formula: FEI01 - CP01
+    enabled: true
+    category: FEI-CP
+    notes: FEI01 minus CP01
+
+  - name: FEI_CP_02
+    formula: FEI02 - CP02
+    enabled: true
+    category: FEI-CP
+    notes: FEI02 minus CP02
+
+  - name: FEI_CP_03
+    formula: FEI03 - CP03
+    enabled: true
+    category: FEI-CP
+    notes: FEI03 minus CP03
+
+  - name: FEI_CP_04
+    formula: FEI04 - CP04
+    enabled: true
+    category: FEI-CP
+    notes: FEI04 minus CP04
+
+  - name: FEI_CP_05
+    formula: FEI05 - CP05
+    enabled: true
+    category: FEI-CP
+    notes: FEI05 minus CP05
+
+  - name: FEI_CP_06
+    formula: FEI06 - CP06
+    enabled: true
+    category: FEI-CP
+    notes: FEI06 minus CP06
+
+  - name: FEI_CP_07
+    formula: FEI07 - CP07
+    enabled: true
+    category: FEI-CP
+    notes: FEI07 minus CP07
+
+  - name: FEI_CP_08
+    formula: FEI08 - CP08
+    enabled: true
+    category: FEI-CP
+    notes: FEI08 minus CP08
+
+  - name: FEI_CP_09
+    formula: FEI09 - CP09
+    enabled: true
+    category: FEI-CP
+    notes: FEI09 minus CP09
+
+  - name: FEI_CP_10
+    formula: FEI10 - CP10
+    enabled: true
+    category: FEI-CP
+    notes: FEI10 minus CP10
+
+  - name: FEI_CP_11
+    formula: FEI11 - CP11
+    enabled: true
+    category: FEI-CP
+    notes: FEI11 minus CP11
+
+  - name: FEI_CP_12
+    formula: FEI12 - CP12
+    enabled: true
+    category: FEI-CP
+    notes: FEI12 minus CP12
+
   - name: LPG_FEI_01_spread
     formula: (DATE_INT < 20250401) * (LPG01 - FEI01 * USDCHY * 1.09 * 1.01) + (DATE_INT >= 20250401) * (LPG01 - FEI01 * USDCHY * 1.09 * 1.11)
     enabled: true
