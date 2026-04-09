@@ -24,6 +24,23 @@ def _flatten_columns(columns: pd.Index, column_name_row: int) -> list[str]:
     return flattened
 
 
+def _make_unique_columns(columns: list[str]) -> list[str]:
+    seen: dict[str, int] = {}
+    unique: list[str] = []
+    for raw_name in columns:
+        name = str(raw_name).strip()
+        count = seen.get(name, 0) + 1
+        seen[name] = count
+        unique.append(name if count == 1 else f"{name}__{count}")
+    return unique
+
+
+def _base_column_name(name: str) -> str:
+    if "__" not in name:
+        return name
+    return name.split("__", 1)[0]
+
+
 def _coerce_excel_dates(values: pd.Series) -> pd.Series:
     cleaned = values.astype("object").where(~values.isna(), None)
     cleaned = cleaned.map(lambda x: None if isinstance(x, str) and x.strip().upper() in MISSING_MARKERS else x)
@@ -39,6 +56,14 @@ def _coerce_excel_dates(values: pd.Series) -> pd.Series:
             errors="coerce",
         )
     return parsed
+
+
+def _looks_like_duplicate_date_column(values: pd.Series, reference_dates: pd.Series) -> bool:
+    parsed = _coerce_excel_dates(values)
+    comparable = parsed.notna() & reference_dates.notna()
+    if not comparable.any():
+        return False
+    return bool((parsed.loc[comparable] == reference_dates.loc[comparable]).mean() >= 0.95)
 
 
 def load_timeseries_from_excel(
@@ -57,15 +82,30 @@ def load_timeseries_from_excel(
     df = df.replace(r"^\s*$", pd.NA, regex=True)
     df = df.replace(list(MISSING_MARKERS), pd.NA)
 
-    df.columns = _flatten_columns(df.columns, column_name_row)
+    df.columns = _make_unique_columns(_flatten_columns(df.columns, column_name_row))
     df = df.loc[:, [bool(str(col).strip()) for col in df.columns]]
 
-    if date_column not in df.columns:
+    date_candidates = [col for col in df.columns if _base_column_name(str(col)) == date_column]
+    if not date_candidates:
         raise ValueError(f"Missing date column: {date_column}")
 
-    df[date_column] = _coerce_excel_dates(df[date_column])
-    df = df.dropna(subset=[date_column]).drop_duplicates(subset=[date_column])
-    df = df.set_index(date_column).sort_index()
+    primary_date_col = date_candidates[0]
+    date_values = _coerce_excel_dates(df[primary_date_col])
+
+    drop_cols: list[str] = []
+    for col in df.columns:
+        if col == primary_date_col:
+            continue
+        if _base_column_name(str(col)) == date_column or _looks_like_duplicate_date_column(df[col], date_values):
+            drop_cols.append(col)
+
+    if drop_cols:
+        df = df.drop(columns=drop_cols)
+
+    df[primary_date_col] = date_values
+    df = df.dropna(subset=[primary_date_col]).drop_duplicates(subset=[primary_date_col])
+    df = df.set_index(primary_date_col).sort_index()
+    df.index.name = date_column
 
     numeric_cols = [c for c in df.columns if c]
     for col in numeric_cols:

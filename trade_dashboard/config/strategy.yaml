@@ -29,6 +29,24 @@ strategies:
     category: Domestic_PDH
     notes: Uses LPG05 as the propane leg
 
+  - name: Domestic_PDH_06
+    formula: PP06 - 1.18 * LPG06
+    enabled: true
+    category: Domestic_PDH
+    notes: Uses LPG06 as the propane leg
+
+  - name: Domestic_PDH_07
+    formula: PP07 - 1.18 * LPG07
+    enabled: true
+    category: Domestic_PDH
+    notes: Uses LPG07 as the propane leg
+
+  - name: Domestic_PDH_08
+    formula: PP08 - 1.18 * LPG08
+    enabled: true
+    category: Domestic_PDH
+    notes: Uses LPG08 as the propane leg
+
   - name: Domestic_PDH_09
     formula: PP09 - 1.18 * LPG09
     enabled: true
@@ -84,6 +102,105 @@ strategies:
         - key: fei
           label: FEI05
           expr: FEI05
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: yield_factor
+          label: Yield factor
+          expr: 1.17
+      derived:
+        - key: import_cost
+          label: Imported PDH cost
+          expr: fei * fx * tariff * vat * yield_factor
+
+  - name: FEI_PDH_06
+    formula: (DATE_INT < 20250401) * (PP06 - FEI06 * USDCHY * 1.01 * 1.09 * 1.17) + (DATE_INT >= 20250401) * (PP06 - FEI06 * USDCHY * 1.11 * 1.09 * 1.17)
+    enabled: true
+    category: FEI_PDH
+    notes: FEI 06 with different tariff coefficients before and after 2025-04-01
+    decomposition:
+      type: spread
+      target_label: FEI PDH 06
+      target_expr: domestic_pp - fei * fx * tariff * vat * yield_factor
+      components:
+        - key: domestic_pp
+          label: PP06
+          expr: PP06
+        - key: fei
+          label: FEI06
+          expr: FEI06
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: yield_factor
+          label: Yield factor
+          expr: 1.17
+      derived:
+        - key: import_cost
+          label: Imported PDH cost
+          expr: fei * fx * tariff * vat * yield_factor
+
+  - name: FEI_PDH_07
+    formula: (DATE_INT < 20250401) * (PP07 - FEI07 * USDCHY * 1.01 * 1.09 * 1.17) + (DATE_INT >= 20250401) * (PP07 - FEI07 * USDCHY * 1.11 * 1.09 * 1.17)
+    enabled: true
+    category: FEI_PDH
+    notes: FEI 07 with different tariff coefficients before and after 2025-04-01
+    decomposition:
+      type: spread
+      target_label: FEI PDH 07
+      target_expr: domestic_pp - fei * fx * tariff * vat * yield_factor
+      components:
+        - key: domestic_pp
+          label: PP07
+          expr: PP07
+        - key: fei
+          label: FEI07
+          expr: FEI07
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: tariff
+          label: Tariff
+          expr: (DATE_INT < 20250401) * 1.01 + (DATE_INT >= 20250401) * 1.11
+        - key: vat
+          label: VAT
+          expr: 1.09
+        - key: yield_factor
+          label: Yield factor
+          expr: 1.17
+      derived:
+        - key: import_cost
+          label: Imported PDH cost
+          expr: fei * fx * tariff * vat * yield_factor
+
+  - name: FEI_PDH_08
+    formula: (DATE_INT < 20250401) * (PP08 - FEI08 * USDCHY * 1.01 * 1.09 * 1.17) + (DATE_INT >= 20250401) * (PP08 - FEI08 * USDCHY * 1.11 * 1.09 * 1.17)
+    enabled: true
+    category: FEI_PDH
+    notes: FEI 08 with different tariff coefficients before and after 2025-04-01
+    decomposition:
+      type: spread
+      target_label: FEI PDH 08
+      target_expr: domestic_pp - fei * fx * tariff * vat * yield_factor
+      components:
+        - key: domestic_pp
+          label: PP08
+          expr: PP08
+        - key: fei
+          label: FEI08
+          expr: FEI08
         - key: fx
           label: USDCHY
           expr: USDCHY
