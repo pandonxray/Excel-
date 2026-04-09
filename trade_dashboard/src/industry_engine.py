@@ -195,6 +195,18 @@ def _weighted_sum_strict(frame: pd.DataFrame, weights: dict[str, float]) -> pd.S
     return weighted.sum(axis=1, min_count=len(weights))
 
 
+def _weighted_sum_renormalized(frame: pd.DataFrame, weights: dict[str, float]) -> pd.Series:
+    weighted = pd.DataFrame(index=frame.index)
+    available_weight = pd.Series(0.0, index=frame.index)
+    for column, weight in weights.items():
+        value = frame[column]
+        weighted[column] = value * weight
+        available_weight = available_weight + value.notna().astype(float) * weight
+
+    total = weighted.sum(axis=1, min_count=1)
+    return total.where(available_weight > 0) / available_weight.where(available_weight > 0)
+
+
 def build_propylene_profit_dashboard(spot_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     alias_df = pd.DataFrame(index=spot_df.index)
     metadata_rows: list[dict[str, object]] = []
@@ -243,7 +255,7 @@ def build_propylene_profit_dashboard(spot_df: pd.DataFrame) -> tuple[pd.DataFram
             composite_profit_frame[metric_name] = alias_df["ech_shandong"]
         else:
             composite_profit_frame[metric_name] = result[metric_name]
-    result["下游综合利润"] = _weighted_sum_strict(composite_profit_frame, PROFIT_WEIGHTS)
+    result["下游综合利润"] = _weighted_sum_renormalized(composite_profit_frame, PROFIT_WEIGHTS)
 
     composite_netback_frame = pd.DataFrame(index=result.index)
     for metric_name in NETBACK_WEIGHTS:
@@ -252,13 +264,13 @@ def build_propylene_profit_dashboard(spot_df: pd.DataFrame) -> tuple[pd.DataFram
 
     ech_note = ""
     if alias_df["ech_shandong"].dropna().empty:
-        ech_note = "工作簿中未找到环氧氯丙烷列，因此对应日期的下游综合利润暂不计算"
+        ech_note = "工作簿中未找到环氧氯丙烷列；下游综合利润会对其余可用权重做归一化后再计算"
 
     metadata_rows.append(
         {
             "metric": "下游综合利润",
             "category": "综合",
-            "formula": "按给定权重汇总利润项，并额外叠加 0.0089241×环氧氯丙烷；任一项缺失时该日不计算",
+            "formula": "按给定权重汇总利润项，并额外叠加 0.0089241×环氧氯丙烷；缺失项会按剩余可用权重归一化后计算",
             "note": ech_note,
         }
     )
