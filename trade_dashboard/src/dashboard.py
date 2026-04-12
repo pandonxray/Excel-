@@ -390,7 +390,7 @@ def _collect_term_configs(sources: dict[str, pd.DataFrame], downstream_meta: pd.
 
 
 def _build_combo_frame(sources: dict[str, pd.DataFrame], terms: list[dict[str, object]]) -> tuple[pd.DataFrame, str, str, list[str]]:
-    union_index = pd.Index([])
+    union_index = pd.DatetimeIndex([])
     for frame in sources.values():
         union_index = union_index.union(frame.index)
     frame = pd.DataFrame(index=union_index.sort_values())

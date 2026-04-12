@@ -7,7 +7,19 @@ import pandas as pd
 SEASONAL_YEAR = 2001
 
 
+def _ensure_datetime_index(data: pd.Series | pd.DataFrame) -> pd.Series | pd.DataFrame:
+    if isinstance(data.index, pd.DatetimeIndex):
+        return data.sort_index()
+
+    coerced_index = pd.to_datetime(data.index, errors="coerce")
+    valid_mask = ~pd.isna(coerced_index)
+    cleaned = data.loc[valid_mask].copy()
+    cleaned.index = pd.DatetimeIndex(coerced_index[valid_mask])
+    return cleaned.sort_index()
+
+
 def remove_feb29(df: pd.DataFrame) -> pd.DataFrame:
+    df = _ensure_datetime_index(df)
     mask = ~((df.index.month == 2) & (df.index.day == 29))
     return df.loc[mask]
 
@@ -17,7 +29,7 @@ def _continuous_seasonal_index() -> pd.Index:
 
 
 def seasonal_matrix(series: pd.Series, years: int = 5, interpolate: bool = True) -> pd.DataFrame:
-    s = series.dropna()
+    s = _ensure_datetime_index(series.dropna())
     if s.empty:
         return pd.DataFrame()
 
@@ -38,11 +50,12 @@ def seasonal_matrix(series: pd.Series, years: int = 5, interpolate: bool = True)
 
 
 def seasonal_stats(series: pd.Series, years: int = 5) -> dict[str, float]:
+    series = _ensure_datetime_index(series.dropna())
     matrix = seasonal_matrix(series, years=years)
     if matrix.empty:
         return {"seasonal_percentile": np.nan, "seasonal_deviation": np.nan}
 
-    latest = series.dropna()
+    latest = series
     if latest.empty:
         return {"seasonal_percentile": np.nan, "seasonal_deviation": np.nan}
 
