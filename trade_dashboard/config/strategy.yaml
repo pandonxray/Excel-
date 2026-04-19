@@ -1078,3 +1078,128 @@ strategies:
     enabled: true
     category: MTO
     notes: PP09 minus 3 times MA09
+
+  - name: PP基差_华北
+    formula: PP_basis_north_china
+    enabled: true
+    category: 基差
+    notes: 华北PP基差，定义为华北拉丝现货价减去PP活跃合约收盘价。
+    decomposition:
+      type: spread
+      target_label: PP basis north china
+      target_expr: spot - future
+      components:
+        - key: spot
+          label: North China PP spot
+          expr: PP_spot_north_china
+        - key: future
+          label: PP active future
+          expr: PP_c
+
+  - name: PP基差_华东
+    formula: PP_basis_east_china
+    enabled: true
+    category: 基差
+    notes: 华东PP基差，现货腿取六个华东报价的每日最小值。
+    decomposition:
+      type: spread
+      target_label: PP basis east china
+      target_expr: spot - future
+      components:
+        - key: spot
+          label: East China PP spot min
+          expr: PP_spot_east_china_min
+        - key: future
+          label: PP active future
+          expr: PP_c
+
+  - name: 丙烯基差_山东
+    formula: PL_basis_shandong
+    enabled: true
+    category: 基差
+    notes: 山东丙烯基差，现货腿使用 wind_continue 表中的 PL_shandongspot。
+    decomposition:
+      type: spread
+      target_label: Propylene basis shandong
+      target_expr: spot - future
+      components:
+        - key: spot
+          label: Shandong propylene spot
+          expr: PL_shandongspot
+        - key: future
+          label: PL continuous future
+          expr: PL_c
+
+  - name: 丙烯基差_NEA
+    formula: PL_basis_nea
+    enabled: true
+    category: 基差
+    notes: NEA丙烯基差按外盘美元价折算完税现货后减去PL连续合约，2024-01-01前含1.02关税系数。
+    decomposition:
+      type: spread
+      target_label: Propylene basis NEA
+      target_expr: icis * fx * vat * tariff - future
+      components:
+        - key: icis
+          label: ICIS NEA
+          expr: ICIS_NEA
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: PL_nea_vat
+        - key: tariff
+          label: Tariff
+          expr: PL_nea_tariff
+        - key: future
+          label: PL continuous future
+          expr: PL_c
+      derived:
+        - key: imported_spot
+          label: Imported spot
+          expr: icis * fx * vat * tariff
+
+  - name: 丙烯基差_SEA
+    formula: PL_basis_sea
+    enabled: true
+    category: 基差
+    notes: SEA丙烯基差按外盘美元价折算完税现货后减去PL连续合约。
+    decomposition:
+      type: spread
+      target_label: Propylene basis SEA
+      target_expr: icis * fx * vat - future
+      components:
+        - key: icis
+          label: ICIS SEA
+          expr: ICIS_SEA
+        - key: fx
+          label: USDCHY
+          expr: USDCHY
+        - key: vat
+          label: VAT
+          expr: PL_sea_vat
+        - key: future
+          label: PL continuous future
+          expr: PL_c
+      derived:
+        - key: imported_spot
+          label: Imported spot
+          expr: icis * fx * vat
+
+  - name: MA基差_太仓进口
+    formula: MA_basis_taicang
+    enabled: true
+    category: 基差
+    notes: 太仓进口甲醇基差，定义为太仓进口货现货价减去MA活跃合约收盘价。
+    decomposition:
+      type: spread
+      target_label: MA basis taicang
+      target_expr: spot - future
+      components:
+        - key: spot
+          label: Taicang import methanol spot
+          expr: MA_spot_taicang_import
+        - key: future
+          label: MA active future
+          expr: MA_c
